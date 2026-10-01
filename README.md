@@ -63,7 +63,7 @@ const invite = session.parseInvite('jolt://invite/studio.example/AbC123');
 if (invite) await session.joinInvite(invite);
 ```
 
-Messages appear in the store as soon as you send them and are swapped for the server's copy when it arrives, so there's no flicker and no duplicates. `notifyTyping` and `markRead` throttle themselves, so you can call them as often as you like. `findInviteLinks(text)` spots invite links in a message, which is how the desktop app turns them into cards.
+Messages appear in the store as soon as you send them and are swapped for the server's copy when it arrives, so there's no flicker and no duplicates. `notifyTyping` and `markRead` throttle themselves, so you can call them as often as you like. `findInviteLinks(text)` spots invite links in a message, which is how the desktop app turns them into cards. To change the user's picture, pass an image `Blob` (a `File` from an input works) to `session.setAvatar`, or `null` to remove it. Crop and shrink it first if you can, since instances cap avatars at 1 MB and 1024 pixels a side.
 
 For anything that isn't wrapped, `session.rest(instance)` gives you a typed REST client for that instance.
 
