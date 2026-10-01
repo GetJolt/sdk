@@ -81,6 +81,11 @@ export function linkOf(post: Pick<Post, 'id' | 'source'>): string | null {
   return /^(?:bsky|masto):(\d+):/.exec(post.id)?.[1] ?? null;
 }
 
+/** The linked account a Bluesky or Mastodon person was seen through, from their id. */
+export function linkOfUser(userId: string): string | null {
+  return /^(?:bsky|masto):(\d+):/.exec(userId)?.[1] ?? null;
+}
+
 export const emptyFeed: FeedState = {
   entries: [],
   cursor: null,
@@ -245,8 +250,15 @@ export class JoltSocial {
   private fetchPage(key: string, before?: string): Promise<TimelinePage> {
     const rest = this.host.rest();
     if (key === feedKey.home) return rest.timeline({ before });
-    const profile = /^profile:([^:]+):(posts|replies|media)$/.exec(key);
-    if (profile) return rest.profilePosts(profile[1]!, { before, filter: profile[2] as ProfileFilter });
+    // User ids from Bluesky and Mastodon contain colons, so only the filter at the end is split off.
+    const profile = /^profile:(.+):(posts|replies|media)$/.exec(key);
+    if (profile) {
+      const [userId, filter] = [profile[1]!, profile[2] as ProfileFilter];
+      const linkId = linkOfUser(userId);
+      return linkId
+        ? rest.linkProfilePosts(linkId, userId, { before, filter })
+        : rest.profilePosts(userId, { before, filter });
+    }
     const link = /^link:(\d+)$/.exec(key);
     if (link) return rest.linkTimeline(link[1]!, { before });
     throw new Error(`Unknown feed "${key}"`);
@@ -499,7 +511,14 @@ export class JoltSocial {
     }));
     try {
       const rest = this.host.rest();
-      const relationship = await (follow ? rest.follow(userId) : rest.unfollow(userId));
+      const linkId = linkOfUser(userId);
+      const relationship = await (linkId
+        ? follow
+          ? rest.linkFollow(linkId, userId)
+          : rest.linkUnfollow(linkId, userId)
+        : follow
+          ? rest.follow(userId)
+          : rest.unfollow(userId));
       this.host.set((s) => ({ relationships: { ...s.relationships, [userId]: relationship } }));
       return relationship;
     } catch (error) {
@@ -522,7 +541,9 @@ export class JoltSocial {
   }
 
   async loadProfile(userId: string): Promise<Profile> {
-    return this.storeProfile(await this.host.rest().profile(userId));
+    const linkId = linkOfUser(userId);
+    const rest = this.host.rest();
+    return this.storeProfile(await (linkId ? rest.linkProfile(linkId, userId) : rest.profile(userId)));
   }
 
   /** Finds someone by `@name@server`, asking their server if needed. */
@@ -545,7 +566,11 @@ export class JoltSocial {
       },
     }));
     try {
-      const thread = await this.host.rest().thread(postId);
+      // Post ids from Bluesky and Mastodon start with their link, the same way people's ids do.
+      const linkId = linkOfUser(postId);
+      const thread = await (linkId
+        ? this.host.rest().linkThread(linkId, postId)
+        : this.host.rest().thread(postId));
       this.host.set((s) => ({
         posts: withPosts(s, [...thread.ancestors, thread.post, ...thread.replies]),
         threads: {

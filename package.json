@@ -1,6 +1,6 @@
 {
   "name": "@getjolt/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Build Jolt clients: sign in, federate across instances, and get a live store of everything the user can see.",
   "keywords": [
     "jolt",
@@ -38,8 +38,7 @@
     "node": ">=22"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

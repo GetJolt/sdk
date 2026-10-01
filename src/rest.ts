@@ -251,6 +251,21 @@ export class RestClient {
     this.request<TimelinePage>('GET', `/links/${enc(linkId)}/timeline`, undefined, query);
   /** People the linked account follows, and how to follow each of them from Jolt. */
   linkFriends = (linkId: string) => this.request<FriendSuggestion[]>('GET', `/links/${enc(linkId)}/friends`);
+  /** A Bluesky or Mastodon post with the posts above it and its replies. */
+  linkThread = (linkId: string, postId: string) =>
+    this.request<Thread>('GET', `/links/${enc(linkId)}/thread`, undefined, { post: postId });
+  /** Someone's Bluesky or Mastodon profile, as the linked account sees it. */
+  linkProfile = (linkId: string, userId: string) =>
+    this.request<Profile>('GET', `/links/${enc(linkId)}/profile`, undefined, { user: userId });
+  linkProfilePosts = (linkId: string, userId: string, query: PageQuery & { filter?: ProfileFilter } = {}) =>
+    this.request<TimelinePage>('GET', `/links/${enc(linkId)}/profile/posts`, undefined, {
+      ...query,
+      user: userId,
+    });
+  linkFollow = (linkId: string, userId: string) =>
+    this.request<Relationship>('PUT', `/links/${enc(linkId)}/profile/follow`, undefined, { user: userId });
+  linkUnfollow = (linkId: string, userId: string) =>
+    this.request<Relationship>('DELETE', `/links/${enc(linkId)}/profile/follow`, undefined, { user: userId });
   /** Like, repost or reply to a post from a linked timeline, as that account. */
   linkAction = (linkId: string, body: LinkActionBody) =>
     this.request<Post>('POST', `/links/${enc(linkId)}/actions`, body);
