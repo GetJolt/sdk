@@ -67,6 +67,25 @@ Messages appear in the store as soon as you send them and are swapped for the se
 
 For anything that isn't wrapped, `session.rest(instance)` gives you a typed REST client for that instance.
 
+## The timeline
+
+`session.social` covers the social side: timelines, profiles, posting, likes, reposts, follows and notifications. Like chat, it keeps a live copy in the store under `state.social`, and new posts from people you follow arrive over the same gateway.
+
+```ts
+import { feedKey } from '@getjolt/sdk';
+
+await session.social.loadFeed(feedKey.home);
+const image = await session.social.uploadMedia(file);
+await session.social.createPost({ text: 'Morning! #jolt', media: [{ ...image, alt: 'Coffee on a desk' }] });
+
+const someone = await session.social.lookup('@lou@mastodon.social');
+await session.social.setFollowing(someone.user.id, true);
+```
+
+Posts come back as text plus facets (links, mentions and hashtags with their positions), whether they were written on Jolt or arrived from Mastodon, so you never have to render HTML from another server. Your own posts appear straight away and new ones from other people wait in `feed.fresh` until you call `showFresh()`, so the list doesn't jump while someone is reading. All of it talks to the user's home instance, which handles federation for you.
+
+Linked accounts work the same way. `session.social.linkAccount('bluesky', 'name.bsky.social')` returns a page to open in the browser, and once the user approves, the link arrives over the gateway. After that `feedKey.link(id)` loads that account's own timeline, likes and replies on its posts go out as that account, `crosspost: [id]` on `createPost` posts there too, and `findFriends(id)` lists who they follow and how to follow each of them here.
+
 ## Federation, without thinking about it
 
 Your account lives on your home instance. When you open a server that lives somewhere else, the SDK asks your home instance for a short-lived certificate for this device, proves to the other instance that it holds the matching key, and gets a session there. It renews certificates before they expire and signs in again if a session lapses. You never deal with any of it, but [PROTOCOL.md](https://github.com/GetJolt/protocol/blob/main/PROTOCOL.md) explains how it works if you're curious.

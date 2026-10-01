@@ -1,6 +1,6 @@
 {
   "name": "@getjolt/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Build Jolt clients: sign in, federate across instances, and get a live store of everything the user can see.",
   "keywords": [
     "jolt",
@@ -49,7 +49,7 @@
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "@getjolt/protocol": "^0.1.0"
+    "@getjolt/protocol": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "^24.9.0",

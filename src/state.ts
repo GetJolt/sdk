@@ -18,6 +18,7 @@ import {
   type User,
 } from '@getjolt/protocol';
 import type { GatewayState } from './gateway.js';
+import { initialSocialState, reduceSocial, type SocialState } from './social.js';
 
 export type ScopedKey = string;
 
@@ -75,6 +76,8 @@ export interface ChatState {
   /** channelKey → userId → expiry timestamp. */
   typing: Record<ScopedKey, Record<string, number>>;
   connections: Record<string, GatewayState>;
+  /** Timelines, posts, profiles and notifications, all from the home instance. */
+  social: SocialState;
 }
 
 export const emptyChannel: ChannelMessages = {
@@ -94,6 +97,7 @@ export const initialChatState = (): ChatState => ({
   readStates: {},
   typing: {},
   connections: {},
+  social: initialSocialState(),
 });
 
 const MAX_MESSAGES_IN_MEMORY = 600;
@@ -307,6 +311,18 @@ export function reduceDispatch(state: ChatState, instance: string, frame: Dispat
 
     case 'RESUMED':
       return {};
+
+    case 'FEED_ITEM_CREATE':
+    case 'POST_UPDATE':
+    case 'POST_DELETE':
+    case 'NOTIFICATION_CREATE':
+    case 'RELATIONSHIP_UPDATE':
+    case 'LINKED_ACCOUNTS_UPDATE': {
+      // Social events only mean anything from the home instance.
+      if (instance !== state.homeInstance) return {};
+      const patch = reduceSocial(state.social, state.me[instance], frame);
+      return patch ? { social: { ...state.social, ...patch } } : {};
+    }
   }
 }
 

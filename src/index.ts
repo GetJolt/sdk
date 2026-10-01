@@ -7,7 +7,13 @@ export {
 } from './client.js';
 export { Emitter } from './emitter.js';
 export { GatewayClient, type GatewayState } from './gateway.js';
-export { JoltApiError, RestClient, type RestOptions } from './rest.js';
+export {
+  JoltApiError,
+  RestClient,
+  type ProfileFilter,
+  type RestOptions,
+  type UploadedMedia,
+} from './rest.js';
 export {
   errorMessage,
   findInviteLinks,
@@ -17,5 +23,6 @@ export {
   type FoundInvite,
   type ParsedInvite,
 } from './session.js';
+export * from './social.js';
 export * from './state.js';
 export { createStore, type Listener, type Store } from './store.js';

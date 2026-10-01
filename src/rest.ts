@@ -31,7 +31,30 @@ import {
   type UpdateProfileBody,
   type UpdateRoleBody,
   type User,
+  type CreatePostBody,
+  type FriendSuggestion,
+  type LinkActionBody,
+  type LinkedAccount,
+  type StartLinkBody,
+  type UpdateLinkBody,
+  type NotificationPage,
+  type PageQuery,
+  type Post,
+  type Profile,
+  type Relationship,
+  type Thread,
+  type TimelinePage,
 } from '@getjolt/protocol';
+
+export interface UploadedMedia {
+  id: string;
+  url: string;
+  mediaType: string;
+  width: number;
+  height: number;
+}
+
+export type ProfileFilter = 'posts' | 'replies' | 'media';
 
 export class JoltApiError extends Error {
   constructor(
@@ -191,4 +214,44 @@ export class RestClient {
   invite = (code: string) => this.request<Invite>('GET', `/invites/${enc(code)}`);
   acceptInvite = (code: string) => this.request<GuildSnapshot>('POST', `/invites/${enc(code)}`);
   deleteInvite = (code: string) => this.request<void>('DELETE', `/invites/${enc(code)}`);
+
+  // Social. All of these go to the user's home instance.
+  timeline = (query: PageQuery = {}) => this.request<TimelinePage>('GET', '/timeline', undefined, query);
+  createPost = (body: CreatePostBody) => this.request<Post>('POST', '/posts', body);
+  post = (postId: string) => this.request<Post>('GET', `/posts/${enc(postId)}`);
+  /** Opens a post from its link, on this instance or anywhere on the fediverse. */
+  lookupPost = (url: string) => this.request<Post>('GET', '/posts/lookup', undefined, { url });
+  thread = (postId: string) => this.request<Thread>('GET', `/posts/${enc(postId)}/thread`);
+  deletePost = (postId: string) => this.request<void>('DELETE', `/posts/${enc(postId)}`);
+  like = (postId: string) => this.request<Post>('PUT', `/posts/${enc(postId)}/like`);
+  unlike = (postId: string) => this.request<Post>('DELETE', `/posts/${enc(postId)}/like`);
+  repost = (postId: string) => this.request<Post>('PUT', `/posts/${enc(postId)}/repost`);
+  unrepost = (postId: string) => this.request<Post>('DELETE', `/posts/${enc(postId)}/repost`);
+  /** Uploads an image for a post you're about to publish; pass the returned id in `createPost`. */
+  uploadMedia = (image: Blob) => this.request<UploadedMedia>('POST', '/media', image);
+  profile = (userId: string) => this.request<Profile>('GET', `/profiles/${enc(userId)}`);
+  lookupProfile = (address: string) =>
+    this.request<Profile>('GET', '/profiles/lookup', undefined, { address });
+  profilePosts = (userId: string, query: PageQuery & { filter?: ProfileFilter } = {}) =>
+    this.request<TimelinePage>('GET', `/profiles/${enc(userId)}/posts`, undefined, query);
+  follow = (userId: string) => this.request<Relationship>('PUT', `/profiles/${enc(userId)}/follow`);
+  unfollow = (userId: string) => this.request<Relationship>('DELETE', `/profiles/${enc(userId)}/follow`);
+  notifications = (query: PageQuery = {}) =>
+    this.request<NotificationPage>('GET', '/notifications', undefined, query);
+  markNotificationsRead = () => this.request<void>('POST', '/notifications/read');
+
+  links = () => this.request<LinkedAccount[]>('GET', '/links');
+  /** Returns the Bluesky or Mastodon page to open so the user can approve linking their account. */
+  startLink = (body: StartLinkBody) => this.request<{ url: string }>('POST', '/links/start', body);
+  updateLink = (linkId: string, body: UpdateLinkBody) =>
+    this.request<LinkedAccount>('PATCH', `/links/${enc(linkId)}`, body);
+  unlink = (linkId: string) => this.request<void>('DELETE', `/links/${enc(linkId)}`);
+  /** A linked account's own home timeline, fetched from Bluesky or Mastodon. */
+  linkTimeline = (linkId: string, query: { before?: string } = {}) =>
+    this.request<TimelinePage>('GET', `/links/${enc(linkId)}/timeline`, undefined, query);
+  /** People the linked account follows, and how to follow each of them from Jolt. */
+  linkFriends = (linkId: string) => this.request<FriendSuggestion[]>('GET', `/links/${enc(linkId)}/friends`);
+  /** Like, repost or reply to a post from a linked timeline, as that account. */
+  linkAction = (linkId: string, body: LinkActionBody) =>
+    this.request<Post>('POST', `/links/${enc(linkId)}/actions`, body);
 }

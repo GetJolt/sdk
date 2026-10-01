@@ -31,6 +31,7 @@ import {
   type ChannelMessages,
   type ScopedKey,
 } from './state.js';
+import { JoltSocial } from './social.js';
 import { createStore, type Store } from './store.js';
 
 type SessionEvents = {
@@ -95,6 +96,8 @@ export function findInviteLinks(content: string): FoundInvite[] {
 export class JoltSession extends Emitter<SessionEvents> {
   readonly client: JoltClient;
   readonly store: Store<ChatState> = createStore(initialChatState());
+  /** Timelines, posting, follows and notifications. */
+  readonly social: JoltSocial;
   private nonceCounter = 0;
   private readonly lastTyping = new Map<ScopedKey, number>();
   private readonly ackTimers = new Map<ScopedKey, ReturnType<typeof setTimeout>>();
@@ -109,6 +112,15 @@ export class JoltSession extends Emitter<SessionEvents> {
     );
     this.client.on('signedOut', () => this.reset('signedOut'));
     this.client.on('error', ({ instance, error }) => this.emit('error', { instance, error }));
+    this.social = new JoltSocial({
+      get: () => this.state.social,
+      set: (patch) =>
+        this.set((s) => ({
+          social: { ...s.social, ...(typeof patch === 'function' ? patch(s.social) : patch) },
+        })),
+      rest: () => this.client.home.rest,
+      me: () => (this.state.homeInstance ? this.state.me[this.state.homeInstance] : undefined),
+    });
   }
 
   get state(): ChatState {
