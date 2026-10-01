@@ -31,7 +31,7 @@ import {
   type UpdateProfileBody,
   type UpdateRoleBody,
   type User,
-} from '@jolt/protocol';
+} from '@getjolt/protocol';
 
 export class JoltApiError extends Error {
   constructor(
@@ -78,14 +78,16 @@ export class RestClient {
     const headers: Record<string, string> = { accept: 'application/json' };
     const token = this.options.getToken();
     if (token) headers.authorization = `Bearer ${token}`;
-    if (body !== undefined) headers['content-type'] = 'application/json';
+    // Blobs (avatar uploads) go out as-is, and fetch sets their content type.
+    const raw = body instanceof Blob;
+    if (body !== undefined && !raw) headers['content-type'] = 'application/json';
 
     let response: Response;
     try {
       response = await fetch(url, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined || raw ? (body as Blob | undefined) : JSON.stringify(body),
         signal: AbortSignal.timeout(this.options.timeoutMs ?? 15_000),
       });
     } catch {
@@ -121,6 +123,9 @@ export class RestClient {
   me = () => this.request<User>('GET', '/users/@me');
   updateProfile = (body: UpdateProfileBody) => this.request<User>('PATCH', '/users/@me', body);
   syncProfile = () => this.request<User>('POST', '/users/@me/sync');
+  /** Uploads a PNG, JPEG, WebP or GIF. The blob's type must be set, which it is for files and canvas output. */
+  setAvatar = (image: Blob) => this.request<User>('PUT', '/users/@me/avatar', image);
+  removeAvatar = () => this.request<User>('DELETE', '/users/@me/avatar');
   sessions = () => this.request<SessionInfo[]>('GET', '/users/@me/sessions');
   revokeSession = (id: string) => this.request<void>('DELETE', `/users/@me/sessions/${enc(id)}`);
   guildIndex = () => this.request<GuildIndexEntry[]>('GET', '/users/@me/guild-index');

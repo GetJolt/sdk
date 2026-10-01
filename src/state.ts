@@ -16,7 +16,7 @@ import {
   type ReadState,
   type Role,
   type User,
-} from '@jolt/protocol';
+} from '@getjolt/protocol';
 import type { GatewayState } from './gateway.js';
 
 export type ScopedKey = string;

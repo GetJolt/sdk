@@ -5,7 +5,7 @@ import {
   type DispatchFrame,
   type PresenceStatus,
   type ServerFrame,
-} from '@jolt/protocol';
+} from '@getjolt/protocol';
 import { Emitter } from './emitter.js';
 
 export type GatewayState = 'idle' | 'connecting' | 'ready' | 'reconnecting' | 'closed';

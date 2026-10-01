@@ -11,7 +11,7 @@ import {
   type Message,
   type PresenceStatus,
   type RegisterBody,
-} from '@jolt/protocol';
+} from '@getjolt/protocol';
 import { JoltClient, type JoltClientOptions } from './client.js';
 import { Emitter } from './emitter.js';
 import { JoltApiError, type RestClient } from './rest.js';
@@ -425,6 +425,13 @@ export class JoltSession extends Emitter<SessionEvents> {
   /** Updates the profile at home and asks every other instance to refresh its copy. */
   async updateProfile(body: { displayName?: string; bio?: string }): Promise<void> {
     await this.client.home.rest.updateProfile(body);
+    await this.client.syncProfileEverywhere();
+  }
+
+  /** Sets or, with `null`, removes the avatar. It's hosted by the home instance and shown everywhere. */
+  async setAvatar(image: Blob | null): Promise<void> {
+    const rest = this.client.home.rest;
+    await (image ? rest.setAvatar(image) : rest.removeAvatar());
     await this.client.syncProfileEverywhere();
   }
 }

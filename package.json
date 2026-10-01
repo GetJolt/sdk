@@ -1,27 +1,59 @@
 {
-  "name": "@jolt/sdk",
+  "name": "@getjolt/sdk",
   "version": "0.1.0",
-  "description": "Client SDK for Jolt instances: REST, realtime gateway and multi-instance federation.",
+  "description": "Build Jolt clients: sign in, federate across instances, and get a live store of everything the user can see.",
+  "keywords": [
+    "jolt",
+    "chat",
+    "sdk",
+    "federation",
+    "websocket",
+    "discord-alternative"
+  ],
   "license": "MIT",
+  "author": "The Jolt contributors",
+  "homepage": "https://github.com/GetJolt/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GetJolt/sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GetJolt/sdk/issues"
+  },
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "@jolt/protocol": "workspace:*"
+    "@getjolt/protocol": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
   }
 }

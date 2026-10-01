@@ -16,7 +16,7 @@ import {
   type PresenceStatus,
   type RegisterBody,
   type User,
-} from '@jolt/protocol';
+} from '@getjolt/protocol';
 import { Emitter } from './emitter.js';
 import { GatewayClient, type GatewayState } from './gateway.js';
 import { JoltApiError, RestClient } from './rest.js';

@@ -4,10 +4,10 @@ import { findInviteLinks, parseInvite } from '../src/session.js';
 describe('invite links', () => {
   it('finds deep links and web links in running text', () => {
     const found = findInviteLinks(
-      'join us jolt://invite/jolt.chat/AbC123 or https://b.example:4200/invite/XyZ789!',
+      'join us jolt://invite/joltapp.org/AbC123 or https://b.example:4200/invite/XyZ789!',
     );
     expect(found).toEqual([
-      { instance: 'jolt.chat', code: 'AbC123', match: 'jolt://invite/jolt.chat/AbC123' },
+      { instance: 'joltapp.org', code: 'AbC123', match: 'jolt://invite/joltapp.org/AbC123' },
       { instance: 'b.example:4200', code: 'XyZ789', match: 'https://b.example:4200/invite/XyZ789' },
     ]);
   });
