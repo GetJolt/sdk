@@ -38,6 +38,7 @@ import {
   type StartLinkBody,
   type UpdateLinkBody,
   type NotificationPage,
+  type SystemMessageList,
   type PageQuery,
   type Post,
   type Profile,
@@ -239,6 +240,9 @@ export class RestClient {
   notifications = (query: PageQuery = {}) =>
     this.request<NotificationPage>('GET', '/notifications', undefined, query);
   markNotificationsRead = () => this.request<void>('POST', '/notifications/read');
+  /** Messages from the home instance itself, oldest first. */
+  systemMessages = () => this.request<SystemMessageList>('GET', '/system-messages');
+  markSystemMessagesRead = () => this.request<void>('POST', '/system-messages/read');
 
   links = () => this.request<LinkedAccount[]>('GET', '/links');
   /** Returns the Bluesky or Mastodon page to open so the user can approve linking their account. */

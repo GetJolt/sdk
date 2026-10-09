@@ -1,5 +1,6 @@
-// The social side of a session: timelines, posts, profiles and notifications. It all comes from the user's home
-// instance. Posts are stored once by id and feeds hold ids, so a like or delete shows up everywhere at once.
+// The social side of a session: timelines, posts, profiles, notifications and messages from the instance. It all
+// comes from the user's home instance. Posts are stored once by id and feeds hold ids, so a like or delete shows up
+// everywhere at once.
 
 import type {
   CreatePostBody,
@@ -12,6 +13,7 @@ import type {
   PostVisibility,
   Profile,
   Relationship,
+  SystemMessage,
   TimelineItem,
   TimelinePage,
   UpdateLinkBody,
@@ -58,6 +60,13 @@ export interface NotificationsState {
   unread: number;
 }
 
+/** The read-only conversation with "Jolt": messages from the home instance itself. */
+export interface SystemMessagesState {
+  items: SystemMessage[];
+  unread: number;
+  loaded: boolean;
+}
+
 export interface SocialState {
   posts: Record<string, SocialPost>;
   feeds: Record<string, FeedState>;
@@ -66,6 +75,7 @@ export interface SocialState {
   relationships: Record<string, Relationship>;
   notifications: NotificationsState;
   linkedAccounts: LinkedAccount[];
+  system: SystemMessagesState;
 }
 
 /** Feed keys: the home timeline, someone's profile tab, or a linked account's timeline. */
@@ -103,6 +113,7 @@ export const initialSocialState = (): SocialState => ({
   relationships: {},
   notifications: { items: [], cursor: null, hasMore: true, loading: false, loaded: false, unread: 0 },
   linkedAccounts: [],
+  system: { items: [], unread: 0, loaded: false },
 });
 
 const entryOf = (item: TimelineItem): FeedEntry => ({
@@ -196,6 +207,12 @@ export function reduceSocial(
 
     case 'LINKED_ACCOUNTS_UPDATE':
       return { linkedAccounts: frame.d };
+
+    case 'SYSTEM_MESSAGE_CREATE': {
+      const system = state.system;
+      if (system.items.some((m) => m.id === frame.d.id)) return null;
+      return { system: { ...system, items: [...system.items, frame.d], unread: system.unread + 1 } };
+    }
 
     default:
       return null;
@@ -646,6 +663,19 @@ export class JoltSocial {
   async unlink(linkId: string): Promise<void> {
     await this.host.rest().unlink(linkId);
     this.host.set((s) => ({ linkedAccounts: s.linkedAccounts.filter((l) => l.id !== linkId) }));
+  }
+
+  async loadSystemMessages(): Promise<void> {
+    const list = await this.host.rest().systemMessages();
+    this.host.set({ system: { items: list.items, unread: list.unread, loaded: true } });
+  }
+
+  async markSystemMessagesRead(): Promise<void> {
+    if (this.state.system.unread === 0) return;
+    this.host.set((s) => ({
+      system: { ...s.system, unread: 0, items: s.system.items.map((m) => ({ ...m, read: true })) },
+    }));
+    await this.host.rest().markSystemMessagesRead();
   }
 
   async markNotificationsRead(): Promise<void> {

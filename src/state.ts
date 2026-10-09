@@ -317,7 +317,8 @@ export function reduceDispatch(state: ChatState, instance: string, frame: Dispat
     case 'POST_DELETE':
     case 'NOTIFICATION_CREATE':
     case 'RELATIONSHIP_UPDATE':
-    case 'LINKED_ACCOUNTS_UPDATE': {
+    case 'LINKED_ACCOUNTS_UPDATE':
+    case 'SYSTEM_MESSAGE_CREATE': {
       // Social events only mean anything from the home instance.
       if (instance !== state.homeInstance) return {};
       const patch = reduceSocial(state.social, state.me[instance], frame);
