@@ -48,7 +48,7 @@
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "@getjolt/protocol": "^0.2.0"
+    "@getjolt/protocol": "^0.2.1"
   },
   "devDependencies": {
     "@types/node": "^24.9.0",
