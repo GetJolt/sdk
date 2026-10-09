@@ -5,6 +5,7 @@ import {
   federationChallengeMessage,
   generateKeyPair,
   instanceOrigin,
+  isValidInstance,
   normalizeInstance,
   signBytes,
   type DispatchFrame,
@@ -138,6 +139,9 @@ export class JoltClient extends Emitter<ClientEvents> {
     conn.token = token;
     try {
       conn.user = await conn.rest.me();
+      // Sessions saved before home addresses were made canonical may still be under an alias.
+      const canonical = await this.adoptCanonicalHome(conn, conn.user);
+      if (canonical !== conn) await this.saveHome(canonical.instance, token);
     } catch (error) {
       if (error instanceof JoltApiError && error.status === 401) {
         await this.clearLocalState();
@@ -167,12 +171,33 @@ export class JoltClient extends Emitter<ClientEvents> {
       this.connections.delete(instance);
       throw error;
     });
-    this.homeInstance = instance;
     conn.token = token;
     conn.user = user;
+    const home = await this.adoptCanonicalHome(conn, user);
+    await this.saveHome(home.instance, token);
+    return user;
+  }
+
+  /**
+   * Makes the instance's own name the home address, whatever was typed to reach it. Signing in through an alias
+   * (www.example.org for example.org) would otherwise leave the real name looking like another instance, and the
+   * client would try to federate into its own home, which the server refuses.
+   */
+  private async adoptCanonicalHome(conn: InstanceConnection, user: User): Promise<InstanceConnection> {
+    const canonical = normalizeInstance(user.instance);
+    if (canonical === conn.instance || !isValidInstance(canonical)) return conn;
+    this.connections.delete(conn.instance);
+    await this.options.storage.delete(tokenKey(conn.instance));
+    const home = this.createConnection(canonical, true);
+    home.token = conn.token;
+    home.user = user;
+    return home;
+  }
+
+  private async saveHome(instance: string, token: string): Promise<void> {
+    this.homeInstance = instance;
     await this.options.storage.set(SESSION_KEY, instance);
     await this.options.storage.set(tokenKey(instance), token);
-    return user;
   }
 
   /** Opens the home gateway and every instance the user has guilds on. */
